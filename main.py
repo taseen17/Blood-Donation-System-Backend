@@ -19,7 +19,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # your Vite dev server URL
+    allow_origins=["https://blood-donation-system-phitron.netlify.app/"],  # your Vite dev server URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
