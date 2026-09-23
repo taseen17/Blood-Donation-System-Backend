@@ -98,7 +98,7 @@ def register(user: CreateUsers, db: db_dependency):
         role=user.role,
         city=user.city,
         area=user.area,
-        is_verified=user.is_verified,
+        is_verified= False,
         created_at=user.created_at
     )
     db.add(db_user)

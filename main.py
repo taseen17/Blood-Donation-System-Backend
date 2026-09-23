@@ -11,10 +11,19 @@ from router.auth import get_current_user
 from pydantic import BaseModel
 from datetime import datetime
 from fastapi import  HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # your Vite dev server URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router)
 app.include_router(admin.router)
