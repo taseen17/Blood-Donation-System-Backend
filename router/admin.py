@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from router.auth import get_current_user
-from models import Users, Donors, BloodRequests, RequestResponses, Notifications
+from models import Users, Donors, BloodRequests, RequestResponses, Notifications, Donations
 from typing import Annotated
 
 
@@ -168,6 +168,38 @@ def delete_user(user_id: int, current_user: user_dependency, db: db_dependency):
     user = db.query(Users).filter(Users.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    donor_ids = [donor_id for donor_id, in db.query(Donors.id).filter(Donors.user_id == user_id).all()]
+    request_ids = [request_id for request_id, in db.query(BloodRequests.id).filter(BloodRequests.requester_id == user_id).all()]
+
+    if donor_ids or request_ids:
+        response_query = db.query(RequestResponses)
+        if donor_ids and request_ids:
+            response_query = response_query.filter(
+                (RequestResponses.donor_id.in_(donor_ids)) |
+                (RequestResponses.request_id.in_(request_ids))
+            )
+        elif donor_ids:
+            response_query = response_query.filter(RequestResponses.donor_id.in_(donor_ids))
+        else:
+            response_query = response_query.filter(RequestResponses.request_id.in_(request_ids))
+        response_query.delete(synchronize_session=False)
+
+        donation_query = db.query(Donations)
+        if donor_ids and request_ids:
+            donation_query = donation_query.filter(
+                (Donations.donor_id.in_(donor_ids)) |
+                (Donations.request_id.in_(request_ids))
+            )
+        elif donor_ids:
+            donation_query = donation_query.filter(Donations.donor_id.in_(donor_ids))
+        else:
+            donation_query = donation_query.filter(Donations.request_id.in_(request_ids))
+        donation_query.delete(synchronize_session=False)
+
+    db.query(Notifications).filter(Notifications.user_id == user_id).delete(synchronize_session=False)
+    db.query(Donors).filter(Donors.user_id == user_id).delete(synchronize_session=False)
+    db.query(BloodRequests).filter(BloodRequests.requester_id == user_id).delete(synchronize_session=False)
     db.delete(user)
     db.commit()
     return {"message": "User deleted successfully"}

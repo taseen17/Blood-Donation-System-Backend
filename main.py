@@ -184,6 +184,40 @@ def get_available_blood_requests(db: db_dependency, blood_group: Optional[str] =
 
     return query.all()
 
+@app.get("/blood_request/responses")
+def get_blood_request_responses(request_id: int, current_user: user_dependency, db: db_dependency):
+    blood_request = db.query(BloodRequests).filter(BloodRequests.id == request_id, BloodRequests.requester_id == current_user.id).first()
+    if not blood_request:
+        raise HTTPException(status_code=404, detail="Blood request not found")
+    
+    response_rows = (
+        db.query(RequestResponses, Users)
+        .join(Donors, RequestResponses.donor_id == Donors.id)
+        .join(Users, Donors.user_id == Users.id)
+        .filter(RequestResponses.request_id == request_id)
+        .all()
+    )
+
+    return {
+        "responses": [
+            {
+                "response": response,
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "phone_number": user.phone_number,
+                    "role": user.role,
+                    "city": user.city,
+                    "area": user.area,
+                    "is_verified": user.is_verified,
+                    "created_at": user.created_at,
+                },
+            }
+            for response, user in response_rows
+        ]
+    }
+
 @app.get("/blood_request/{request_id}")
 def get_blood_request(request_id: int, current_user: user_dependency, db: db_dependency):
     blood_request = db.query(BloodRequests).filter(BloodRequests.id == request_id, BloodRequests.requester_id == current_user.id).first()
@@ -264,15 +298,6 @@ def get_donor_responses(current_user: user_dependency, db: db_dependency):
         raise HTTPException(status_code=404, detail="Donor profile not found")
     
     responses = db.query(RequestResponses).filter(RequestResponses.donor_id == donor.id).all()
-    return responses
-
-@app.get("/blood_request/responses")
-def get_blood_request_responses(request_id: int, current_user: user_dependency, db: db_dependency):
-    blood_request = db.query(BloodRequests).filter(BloodRequests.id == request_id, BloodRequests.requester_id == current_user.id).first()
-    if not blood_request:
-        raise HTTPException(status_code=404, detail="Blood request not found")
-    
-    responses = db.query(RequestResponses).filter(RequestResponses.request_id == request_id).all()
     return responses
 
 @app.post("/donation")
