@@ -1,0 +1,25 @@
+# --- rename this file to ".gitignore" and place it in the repo root ---
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# Environment variables
+.env
+
+# Local database
+*.db
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
